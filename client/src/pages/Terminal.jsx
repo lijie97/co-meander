@@ -1,48 +1,23 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { NavBar, Toast, Tabs } from 'antd-mobile';
-import AnsiToHtml from 'ansi-to-html';
+import { Terminal as XTerm } from 'xterm';
+import { FitAddon } from 'xterm-addon-fit';
 import { sessionAPI, projectAPI, createTerminalWebSocket } from '../api/client';
 import FileExplorer from '../components/FileExplorer';
 import GitChanges from '../components/GitChanges';
+import 'xterm/css/xterm.css';
 import './Terminal.css';
-
-// ANSI 转 HTML 转换器
-const ansiConverter = new AnsiToHtml({
-  fg: '#d4d4d4',
-  bg: '#1e1e1e',
-  newline: true,
-  escapeXML: true,
-  colors: {
-    0: '#1e1e1e',
-    1: '#f44747',
-    2: '#6a9955',
-    3: '#dcdcaa',
-    4: '#569cd6',
-    5: '#c586c0',
-    6: '#4ec9b0',
-    7: '#d4d4d4',
-    8: '#808080',
-    9: '#f44747',
-    10: '#6a9955',
-    11: '#dcdcaa',
-    12: '#569cd6',
-    13: '#c586c0',
-    14: '#4ec9b0',
-    15: '#ffffff',
-  },
-});
 
 function Terminal() {
   const { id: sessionId } = useParams();
   const [session, setSession] = useState(null);
   const [project, setProject] = useState(null);
   const [activeTab, setActiveTab] = useState('terminal');
-  const [outputLines, setOutputLines] = useState([]);
-  const [inputValue, setInputValue] = useState('');
-  const outputRef = useRef(null);
-  const inputRef = useRef(null);
+  const terminalRef = useRef(null);
+  const xtermRef = useRef(null);
   const wsRef = useRef(null);
+  const fitAddonRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -51,27 +26,76 @@ function Terminal() {
 
   useEffect(() => {
     if (!project) return;
-    connectWebSocket();
 
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
-    };
+    // 初始化 xterm.js
+    const term = new XTerm({
+      cursorBlink: true,
+      fontSize: 14,
+      fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+      theme: {
+        background: '#1e1e1e',
+        foreground: '#d4d4d4',
+      },
+      rows: 30,
+      cols: 80,
+      scrollback: 10000,
+    });
+
+    const fitAddon = new FitAddon();
+    term.loadAddon(fitAddon);
+
+    if (terminalRef.current) {
+      term.open(terminalRef.current);
+      fitAddon.fit();
+      fitAddonRef.current = fitAddon;
+      xtermRef.current = term;
+
+      // 连接 WebSocket
+      connectWebSocket(term);
+
+      // 监听窗口大小变化
+      const handleResize = () => {
+        if (activeTab === 'terminal') {
+          fitAddon.fit();
+          if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({
+              type: 'resize',
+              cols: term.cols,
+              rows: term.rows,
+            }));
+          }
+        }
+      };
+
+      window.addEventListener('resize', handleResize);
+      
+      // 初始大小调整
+      setTimeout(() => handleResize(), 100);
+
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        term.dispose();
+        if (wsRef.current) {
+          wsRef.current.close();
+        }
+      };
+    }
   }, [project]);
 
-  // 自动滚动到底部
+  // 当切换到终端 tab 时，重新 fit
   useEffect(() => {
-    if (outputRef.current) {
-      outputRef.current.scrollTop = outputRef.current.scrollHeight;
+    if (activeTab === 'terminal' && fitAddonRef.current) {
+      setTimeout(() => {
+        fitAddonRef.current.fit();
+      }, 100);
     }
-  }, [outputLines]);
+  }, [activeTab]);
 
   const loadData = async () => {
     try {
       const sessionData = await sessionAPI.getById(sessionId);
       setSession(sessionData);
-
+      
       const projectData = await projectAPI.getById(sessionData.project_id);
       setProject(projectData);
     } catch (err) {
@@ -80,7 +104,7 @@ function Terminal() {
     }
   };
 
-  const connectWebSocket = () => {
+  const connectWebSocket = (term) => {
     const ws = createTerminalWebSocket(sessionId, project.path);
     wsRef.current = ws;
 
@@ -92,10 +116,10 @@ function Terminal() {
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
-
+        
         switch (msg.type) {
           case 'output':
-            appendOutput(msg.data);
+            term.write(msg.data);
             break;
           case 'exit':
             Toast.show({ icon: 'fail', content: '终端已退出' });
@@ -115,46 +139,13 @@ function Terminal() {
       console.log('WebSocket 已断开');
       Toast.show({ icon: 'fail', content: '连接已断开' });
     };
-  };
 
-  // 追加输出内容
-  const appendOutput = useCallback((data) => {
-    // 转换 ANSI 到 HTML
-    const html = ansiConverter.toHtml(data);
-    setOutputLines((prev) => [...prev, html]);
-  }, []);
-
-  // 发送输入
-  const sendInput = (data) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: 'input', data }));
-    }
-  };
-
-  // 处理键盘输入
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      sendInput(inputValue + '\r');
-      setInputValue('');
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      sendInput('\x1b[A'); // 上箭头
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      sendInput('\x1b[B'); // 下箭头
-    } else if (e.key === 'Tab') {
-      e.preventDefault();
-      sendInput('\t'); // Tab 补全
-    } else if (e.key === 'c' && e.ctrlKey) {
-      e.preventDefault();
-      sendInput('\x03'); // Ctrl+C
-    }
-  };
-
-  // 点击输出区域时聚焦输入框
-  const handleOutputClick = () => {
-    inputRef.current?.focus();
+    // 监听终端输入
+    term.onData((data) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'input', data }));
+      }
+    });
   };
 
   const handleBack = () => {
@@ -166,8 +157,10 @@ function Terminal() {
 
   return (
     <div className="terminal-page">
-      <NavBar onBack={handleBack}>{session?.name || '终端'}</NavBar>
-
+      <NavBar onBack={handleBack}>
+        {session?.name || '终端'}
+      </NavBar>
+      
       <div className="session-tabs">
         <Tabs
           activeKey={activeTab}
@@ -181,36 +174,11 @@ function Terminal() {
       </div>
 
       <div className="session-content">
-        {/* 终端视图 - 自定义渲染 */}
+        {/* 终端视图 */}
         <div
+          ref={terminalRef}
           className={`terminal-container ${activeTab === 'terminal' ? 'active' : ''}`}
-          onClick={handleOutputClick}
-        >
-          <div className="terminal-output" ref={outputRef}>
-            {outputLines.map((line, index) => (
-              <div
-                key={index}
-                className="terminal-line"
-                dangerouslySetInnerHTML={{ __html: line }}
-              />
-            ))}
-          </div>
-          <div className="terminal-input-row">
-            <input
-              ref={inputRef}
-              type="text"
-              className="terminal-input"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="输入命令..."
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="off"
-              spellCheck="false"
-            />
-          </div>
-        </div>
+        />
 
         {/* 代码浏览视图 */}
         <div className={`code-container ${activeTab === 'code' ? 'active' : ''}`}>
