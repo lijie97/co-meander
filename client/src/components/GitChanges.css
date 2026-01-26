@@ -1,0 +1,226 @@
+/* Git 变更组件 */
+.git-changes {
+  height: 100%;
+  background-color: #252526;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.git-changes-loading,
+.git-changes-not-repo,
+.git-changes-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: #858585;
+  gap: 12px;
+}
+
+.git-changes-hint {
+  font-size: 12px;
+  color: #6a6a6a;
+  margin: 0;
+}
+
+/* 变更列表 */
+.git-changes-list {
+  padding-bottom: 20px;
+}
+
+.git-changes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #3c3c3c;
+}
+
+.git-changes-count {
+  font-size: 13px;
+  color: #858585;
+}
+
+.git-changes-refresh {
+  background: #0e639c;
+  color: #ffffff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.git-changes-refresh:active {
+  background: #1177bb;
+}
+
+/* 分组 */
+.git-changes-section {
+  margin-top: 8px;
+}
+
+.git-changes-section-title {
+  padding: 8px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #858585;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* 变更项 */
+.change-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.change-item:active {
+  background-color: #37373d;
+}
+
+.change-status-badge {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #1e1e1e;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+.change-file-name {
+  font-size: 14px;
+  color: #cccccc;
+  flex-shrink: 0;
+}
+
+.change-file-path {
+  font-size: 12px;
+  color: #858585;
+  margin-left: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.change-staged-tag {
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
+/* Diff 查看器 */
+.diff-viewer {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #1e1e1e;
+}
+
+.diff-viewer-nav {
+  background-color: #3c3c3c;
+  --adm-color-text: #ffffff;
+}
+
+.diff-viewer-nav .adm-nav-bar-back-arrow {
+  color: #ffffff;
+}
+
+.diff-viewer-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.diff-viewer-path {
+  padding: 8px 12px;
+  font-size: 11px;
+  color: #858585;
+  background-color: #252526;
+  border-bottom: 1px solid #3c3c3c;
+  word-break: break-all;
+}
+
+.diff-viewer-content {
+  flex: 1;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.diff-viewer-loading,
+.diff-viewer-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: #858585;
+  gap: 12px;
+}
+
+/* 新文件样式 */
+.diff-new-file {
+  padding: 0;
+}
+
+.diff-new-file-header {
+  padding: 8px 12px;
+  background-color: #2d4a3e;
+  color: #98c379;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.diff-new-file-content {
+  margin: 0;
+  padding: 12px;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #98c379;
+  background-color: #1e1e1e;
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-x: auto;
+}
+
+/* 删除文件 */
+.diff-deleted-file {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+}
+
+/* react-diff-viewer 移动端优化覆盖 */
+.diff-viewer-content [class*="diff-"] {
+  font-size: 12px !important;
+}
+
+.diff-viewer-content pre {
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace !important;
+  white-space: pre-wrap !important;
+  word-break: break-all !important;
+}
+
+.diff-viewer-content table {
+  width: 100% !important;
+  table-layout: fixed !important;
+}
+
+.diff-viewer-content td {
+  word-break: break-all !important;
+}
