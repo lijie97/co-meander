@@ -6,6 +6,7 @@ import { FitAddon } from 'xterm-addon-fit';
 import { sessionAPI, projectAPI, createTerminalWebSocket } from '../api/client';
 import FileExplorer from '../components/FileExplorer';
 import GitChanges from '../components/GitChanges';
+import ChatHistory from '../components/ChatHistory';
 import 'xterm/css/xterm.css';
 import './Terminal.css';
 
@@ -27,10 +28,13 @@ function Terminal() {
   useEffect(() => {
     if (!project) return;
 
-    // 初始化 xterm.js
+    // 检测是否为移动设备
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    // 初始化 xterm.js - 移动端优化配置
     const term = new XTerm({
       cursorBlink: true,
-      fontSize: 14,
+      fontSize: isMobile ? 13 : 14,
       fontFamily: 'Menlo, Monaco, "Courier New", monospace',
       theme: {
         background: '#1e1e1e',
@@ -38,7 +42,13 @@ function Terminal() {
       },
       rows: 30,
       cols: 80,
-      scrollback: 10000,
+      scrollback: 5000, // 移动端适当减少历史以节省内存
+      // 移动端关键配置
+      allowTransparency: false, // 提升渲染性能
+      drawBoldTextInBrightColors: true,
+      scrollOnUserInput: true,
+      // 允许浏览器接管滚动事件
+      windowsMode: false,
     });
 
     const fitAddon = new FitAddon();
@@ -69,11 +79,28 @@ function Terminal() {
 
       window.addEventListener('resize', handleResize);
       
+      // 移动端: 处理虚拟键盘弹出导致的 viewport 变化
+      let visualViewportHandler = null;
+      if (isMobile && window.visualViewport) {
+        visualViewportHandler = () => {
+          // 软键盘弹出/收起时重新计算尺寸
+          requestAnimationFrame(() => {
+            if (activeTab === 'terminal' && fitAddonRef.current) {
+              fitAddonRef.current.fit();
+            }
+          });
+        };
+        window.visualViewport.addEventListener('resize', visualViewportHandler);
+      }
+      
       // 初始大小调整
       setTimeout(() => handleResize(), 100);
 
       return () => {
         window.removeEventListener('resize', handleResize);
+        if (visualViewportHandler && window.visualViewport) {
+          window.visualViewport.removeEventListener('resize', visualViewportHandler);
+        }
         term.dispose();
         if (wsRef.current) {
           wsRef.current.close();
@@ -168,6 +195,7 @@ function Terminal() {
           className="session-tabs-bar"
         >
           <Tabs.Tab title="终端" key="terminal" />
+          <Tabs.Tab title="Chat" key="chat" />
           <Tabs.Tab title="代码" key="code" />
           <Tabs.Tab title="Git" key="git" />
         </Tabs>
@@ -179,6 +207,11 @@ function Terminal() {
           ref={terminalRef}
           className={`terminal-container ${activeTab === 'terminal' ? 'active' : ''}`}
         />
+
+        {/* 聊天历史视图 */}
+        <div className={`chat-container ${activeTab === 'chat' ? 'active' : ''}`}>
+          {project && <ChatHistory projectPath={project.path} />}
+        </div>
 
         {/* 代码浏览视图 */}
         <div className={`code-container ${activeTab === 'code' ? 'active' : ''}`}>

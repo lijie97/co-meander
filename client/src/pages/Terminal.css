@@ -3,6 +3,8 @@
   display: flex;
   flex-direction: column;
   background-color: #1e1e1e;
+  /* 禁用下拉刷新 */
+  overscroll-behavior-y: contain;
 }
 
 /* NavBar 深色主题 */
@@ -77,8 +79,27 @@
 }
 
 .terminal-container .xterm-viewport {
-  overflow-y: auto !important;
-  -webkit-overflow-scrolling: touch;
+  /* 禁用滚动 */
+  overflow: hidden !important;
+}
+
+.terminal-container .xterm-screen {
+  touch-action: none;
+}
+
+/* 聊天容器 */
+.chat-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: none;
+  overflow: hidden;
+}
+
+.chat-container.active {
+  display: block;
 }
 
 /* 代码容器 */
@@ -120,6 +141,30 @@
   .session-tabs-bar .adm-tabs-tab {
     padding: 8px 12px;
     font-size: 12px;
+  }
+
+  /* 移动端字体优化 */
+  .terminal-container .xterm {
+    font-size: 13px;
+  }
+
+  /* 增加行高提升可读性 */
+  .terminal-container .xterm-rows {
+    line-height: 1.15;
+  }
+}
+
+/* 处理虚拟键盘弹出时的布局 */
+@media (max-height: 500px) {
+  /* 软键盘弹出时减少 NavBar 高度 */
+  .terminal-page .adm-nav-bar {
+    --height: 36px;
+    min-height: 36px;
+  }
+
+  .session-tabs-bar .adm-tabs-tab {
+    padding: 6px 10px;
+    font-size: 11px;
   }
 }
 

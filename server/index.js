@@ -7,6 +7,7 @@ import projectsRouter from './routes/projects.js';
 import sessionsRouter from './routes/sessions.js';
 import filesRouter from './routes/files.js';
 import gitRouter from './routes/git.js';
+import chatRouter from './routes/chat.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -20,6 +21,7 @@ app.use('/api/projects', projectsRouter);
 app.use('/api/sessions', sessionsRouter);
 app.use('/api/files', filesRouter);
 app.use('/api/git', gitRouter);
+app.use('/api/chat', chatRouter);
 
 // 健康检查
 app.get('/health', (req, res) => {

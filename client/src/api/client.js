@@ -109,6 +109,24 @@ export const systemAPI = {
   restart: () => request('/restart', { method: 'POST' }),
 };
 
+// 聊天历史 API
+export const chatAPI = {
+  // 获取项目的聊天会话
+  getSessions: (projectPath) => 
+    request(`/chat/sessions?projectPath=${encodeURIComponent(projectPath)}`),
+  
+  // 通过哈希获取聊天历史
+  getHistoryByHash: (hash, sessionId) => {
+    let url = `/chat/history-by-hash?hash=${encodeURIComponent(hash)}`;
+    if (sessionId) url += `&sessionId=${encodeURIComponent(sessionId)}`;
+    return request(url);
+  },
+  
+  // 通过路径获取聊天历史
+  getHistory: (sessionPath) =>
+    request(`/chat/history?sessionPath=${encodeURIComponent(sessionPath)}`),
+};
+
 // WebSocket 连接
 export function createTerminalWebSocket(sessionId, projectPath) {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
