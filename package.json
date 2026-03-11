@@ -8,7 +8,8 @@
     "server": "node server/index.js",
     "client": "cd client && npm run dev",
     "build": "cd client && npm run build",
-    "monitor": "node monitor.js"
+    "monitor": "node monitor.js",
+    "postinstall": "node -e \"const{readdirSync:r,chmodSync:c,existsSync:e}=require('fs'),p=require('path'),d=p.join(__dirname,'node_modules','node-pty','prebuilds');if(e(d))for(const s of r(d)){const h=p.join(d,s,'spawn-helper');if(e(h)){c(h,0o755);console.log('fixed +x:',h)}}\""
   },
   "keywords": [],
   "author": "",
