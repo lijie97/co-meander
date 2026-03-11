@@ -61,19 +61,22 @@ router.post('/', async (req, res) => {
       await mkdir(normalizedPath, { recursive: true });
     }
 
-    // 在 WSL 中初始化 git
+    // 初始化 git（Windows 走 WSL，macOS/Linux 走本地 shell）
     await new Promise((resolve, reject) => {
-      const proc = spawn('wsl.exe', ['bash', '-c', `cd "${wslPath}" && git init`]);
-      
+      const cmd = `cd "${process.platform === 'win32' ? wslPath : normalizedPath}" && git init`;
+      const proc = process.platform === 'win32'
+        ? spawn('wsl.exe', ['bash', '-c', cmd])
+        : spawn('bash', ['-lc', cmd]);
+
       let output = '';
       proc.stdout.on('data', (data) => {
         output += data.toString();
       });
-      
+
       proc.stderr.on('data', (data) => {
         output += data.toString();
       });
-      
+
       proc.on('close', (code) => {
         if (code === 0) {
           console.log('Git 初始化成功:', output);

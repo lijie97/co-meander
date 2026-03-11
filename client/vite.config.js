@@ -12,6 +12,7 @@ export default defineConfig(({ mode }) => {
     server: {
       host: '0.0.0.0',
       port: 5173,
+      allowedHosts: ['lijieminimac-mini.tail162ae6.ts.net'],
       proxy: {
         '/api': {
           target: target,
