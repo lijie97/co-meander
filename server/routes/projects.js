@@ -49,8 +49,9 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ success: false, error: '项目名称不能为空' });
     }
 
-    // 自动使用用户主目录 + 项目名称
-    const projectPath = join(homedir(), name);
+    // 自动使用用户主目录 + 项目名称（兼容传入 ~/xxx）
+    const cleanName = String(name).replace(/^~[\\/]/, '').replace(/^\/+/, '');
+    const projectPath = join(homedir(), cleanName);
     const normalizedPath = normalizePath(projectPath);
     const wslPath = toWSLPath(normalizedPath);
 

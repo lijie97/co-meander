@@ -130,11 +130,11 @@ export const chatAPI = {
 // WebSocket 连接
 export function createTerminalWebSocket(sessionId, projectPath) {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const host = window.location.hostname;
-  const port = import.meta.env.VITE_SERVER_PORT || 3000; // 后端端口
-  
+  const host = window.location.host;
+
+  // 走当前 origin，交给反向代理转发，避免跨端口/跨域导致远程访问失败
   const ws = new WebSocket(
-    `${protocol}//${host}:${port}/terminal?sessionId=${sessionId}&projectPath=${encodeURIComponent(projectPath)}`
+    `${protocol}//${host}/terminal?sessionId=${sessionId}&projectPath=${encodeURIComponent(projectPath)}`
   );
 
   return ws;

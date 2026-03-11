@@ -18,6 +18,12 @@ export default defineConfig(({ mode }) => {
           target: target,
           changeOrigin: true,
           secure: false,
+        },
+        '/terminal': {
+          target: target,
+          ws: true,
+          changeOrigin: true,
+          secure: false,
         }
       }
     }

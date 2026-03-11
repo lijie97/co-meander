@@ -13,7 +13,11 @@ export function createPTY(sessionId, projectPath) {
     destroyPTY(sessionId);
   }
 
-  const wslPath = toWSLPath(projectPath);
+  const normalizedProjectPath = String(projectPath || '')
+    .replace('/~/', '/')
+    .replace(/^~\//, `${process.env.HOME || ''}/`);
+
+  const wslPath = toWSLPath(normalizedProjectPath);
 
   const shell = process.platform === 'win32' ? 'wsl.exe' : (process.env.SHELL || 'bash');
   const shellArgs = process.platform === 'win32' ? ['bash', '-l'] : ['-l'];
@@ -23,7 +27,7 @@ export function createPTY(sessionId, projectPath) {
     name: 'xterm-color',
     cols: 80,
     rows: 30,
-    cwd: projectPath,
+    cwd: normalizedProjectPath,
     env: process.env
   });
 
@@ -32,7 +36,7 @@ export function createPTY(sessionId, projectPath) {
 
   // 等待 shell 初始化后，切换到项目目录并启动 agent
   setTimeout(() => {
-    const targetPath = process.platform === 'win32' ? wslPath : projectPath;
+    const targetPath = process.platform === 'win32' ? wslPath : normalizedProjectPath;
     ptyProcess.write(`cd "${targetPath}"\r`);
     setTimeout(() => {
       ptyProcess.write('agent resume\r');

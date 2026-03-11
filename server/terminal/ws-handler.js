@@ -20,7 +20,14 @@ export function setupWebSocket(server) {
     // 获取或创建 PTY
     let ptyProcess = getPTY(sessionId);
     if (!ptyProcess) {
-      ptyProcess = createPTY(sessionId, decodeURIComponent(projectPath));
+      try {
+        ptyProcess = createPTY(sessionId, decodeURIComponent(projectPath));
+      } catch (err) {
+        console.error('创建 PTY 失败:', err);
+        ws.send(JSON.stringify({ type: 'error', message: `终端创建失败: ${err.message}` }));
+        ws.close(1011, 'PTY create failed');
+        return;
+      }
     }
 
     // 监听 PTY 输出
